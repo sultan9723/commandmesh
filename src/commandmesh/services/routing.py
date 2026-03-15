@@ -1,4 +1,5 @@
 from src.commandmesh.models.route import RouteRequest
+from src.commandmesh.services.audit import record_audit_event
 from src.commandmesh.services.policy import evaluate_policy
 
 
@@ -27,7 +28,7 @@ def process_route_request(request: RouteRequest) -> dict:
     policy_result = evaluate_policy(request)
 
     if not policy_result["allowed"]:
-        return {
+        result = {
             "prompt": request.prompt,
             "user_role": request.user_role,
             "sensitivity": request.sensitivity.value,
@@ -37,9 +38,12 @@ def process_route_request(request: RouteRequest) -> dict:
             "allowed": False
         }
 
+        record_audit_event(result)
+        return result
+
     routing_result = choose_model(request.sensitivity.value)
 
-    return {
+    result = {
         "prompt": request.prompt,
         "user_role": request.user_role,
         "sensitivity": request.sensitivity.value,
@@ -48,3 +52,6 @@ def process_route_request(request: RouteRequest) -> dict:
         "status": "routed",
         "allowed": True
     }
+
+    record_audit_event(result)
+    return result
