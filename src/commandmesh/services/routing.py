@@ -1,3 +1,7 @@
+from src.commandmesh.models.route import RouteRequest
+from src.commandmesh.services.policy import evaluate_policy
+
+
 def choose_model(sensitivity: str) -> dict:
     sensitivity = sensitivity.lower()
 
@@ -16,4 +20,31 @@ def choose_model(sensitivity: str) -> dict:
     return {
         "selected_model": "gpt-4.1-mini",
         "reason": "Low sensitivity request routed to cost-efficient model"
+    }
+
+
+def process_route_request(request: RouteRequest) -> dict:
+    policy_result = evaluate_policy(request)
+
+    if not policy_result["allowed"]:
+        return {
+            "prompt": request.prompt,
+            "user_role": request.user_role,
+            "sensitivity": request.sensitivity.value,
+            "selected_model": None,
+            "reason": policy_result["reason"],
+            "status": "blocked",
+            "allowed": False
+        }
+
+    routing_result = choose_model(request.sensitivity.value)
+
+    return {
+        "prompt": request.prompt,
+        "user_role": request.user_role,
+        "sensitivity": request.sensitivity.value,
+        "selected_model": routing_result["selected_model"],
+        "reason": routing_result["reason"],
+        "status": "routed",
+        "allowed": True
     }
