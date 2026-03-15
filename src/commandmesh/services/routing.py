@@ -1,6 +1,7 @@
 from src.commandmesh.models.route import RouteRequest
 from src.commandmesh.services.audit import record_audit_event
 from src.commandmesh.services.policy import evaluate_policy
+from src.commandmesh.services.approval import record_approval_request
 
 
 def choose_model(sensitivity: str) -> dict:
@@ -34,11 +35,13 @@ def process_route_request(request: RouteRequest) -> dict:
             "sensitivity": request.sensitivity.value,
             "selected_model": None,
             "reason": policy_result["reason"],
-            "status": "blocked",
+            "status": policy_result["status"],
             "allowed": False
         }
 
         record_audit_event(result)
+        if result["status"] == "pending":
+            record_approval_request(result)
         return result
 
     routing_result = choose_model(request.sensitivity.value)

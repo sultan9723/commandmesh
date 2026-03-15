@@ -11,8 +11,8 @@ def evaluate_policy(request: RouteRequest) -> dict:
     if sensitivity == "high" and role not in ALLOWED_HIGH_SENSITIVITY_ROLES:
         return {
             "allowed": False,
-            "status": "blocked",
-            "reason": f"Role '{role}' is not permitted to submit high-sensitivity requests"
+            "status": "pending",
+            "reason": f"Role '{role}' is not permitted to submit high-sensitivity requests. Sent for approval."
         }
 
     return {
