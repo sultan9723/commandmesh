@@ -1,6 +1,8 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
+from enum import Enum
 from typing import Optional
+
+from fastapi import FastAPI
+from pydantic import BaseModel, Field
 
 from src.commandmesh.services.routing import choose_model
 
@@ -8,10 +10,16 @@ from src.commandmesh.services.routing import choose_model
 app = FastAPI(title="CommandMesh")
 
 
+class SensitivityLevel(str, Enum):
+    low = "low"
+    medium = "medium"
+    high = "high"
+
+
 class RouteRequest(BaseModel):
-    prompt: str
-    sensitivity: Optional[str] = "low"
-    user_role: Optional[str] = "developer"
+    prompt: str = Field(..., min_length=1, description="User prompt to route")
+    sensitivity: SensitivityLevel = SensitivityLevel.low
+    user_role: Optional[str] = Field(default="developer", min_length=1)
 
 
 @app.get("/")
@@ -33,12 +41,12 @@ def health_check():
 
 @app.post("/route")
 def route_request(request: RouteRequest):
-    decision = choose_model(request.sensitivity)
+    decision = choose_model(request.sensitivity.value)
 
     return {
         "prompt": request.prompt,
         "user_role": request.user_role,
-        "sensitivity": request.sensitivity,
+        "sensitivity": request.sensitivity.value,
         "selected_model": decision["selected_model"],
         "reason": decision["reason"],
         "status": "routed"
