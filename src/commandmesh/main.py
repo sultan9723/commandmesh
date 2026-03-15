@@ -22,6 +22,15 @@ class RouteRequest(BaseModel):
     user_role: Optional[str] = Field(default="developer", min_length=1)
 
 
+class RouteResponse(BaseModel):
+    prompt: str
+    user_role: str
+    sensitivity: str
+    selected_model: str
+    reason: str
+    status: str
+
+
 @app.get("/")
 def root():
     return {
@@ -39,15 +48,15 @@ def health_check():
     }
 
 
-@app.post("/route")
+@app.post("/route", response_model=RouteResponse)
 def route_request(request: RouteRequest):
     decision = choose_model(request.sensitivity.value)
 
-    return {
-        "prompt": request.prompt,
-        "user_role": request.user_role,
-        "sensitivity": request.sensitivity.value,
-        "selected_model": decision["selected_model"],
-        "reason": decision["reason"],
-        "status": "routed"
-    }
+    return RouteResponse(
+        prompt=request.prompt,
+        user_role=request.user_role or "developer",
+        sensitivity=request.sensitivity.value,
+        selected_model=decision["selected_model"],
+        reason=decision["reason"],
+        status="routed"
+    )
